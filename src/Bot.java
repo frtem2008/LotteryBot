@@ -6,7 +6,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -88,9 +87,7 @@ public class Bot extends TelegramLongPollingBot {
 
         String chatId = message.getChatId().toString();
         String messageText = null;
-
         String userName = message.getFrom().getUserName() == null ? message.getFrom().getFirstName() + " " + message.getFrom().getLastName() : "@" + message.getFrom().getUserName();
-
         StringBuilder response = new StringBuilder();
 
         if (message.hasText())
@@ -109,8 +106,7 @@ public class Bot extends TelegramLongPollingBot {
                         e.printStackTrace();
                     }
                 }).start();
-            }
-            else if (messageText.toLowerCase(Locale.ROOT).startsWith("/newlottery")) {
+            } else if (messageText.toLowerCase(Locale.ROOT).startsWith("/newlottery")) {
                 if (!lotteryCreators.contains(message.getFrom().getId())) {
                     System.out.println("A user: @" + userName + " attempted to create a new lottery with no permission!");
                     response = new StringBuilder("У вас нет права создавать розыгрыши!");
@@ -138,37 +134,31 @@ public class Bot extends TelegramLongPollingBot {
                 }
             } else if (messageText.toLowerCase(Locale.ROOT).startsWith("/participate")) {
                 String[] words = messageText.split("/participate");
-
+                //TODO TESTING BECAUSE OF CHANGES
                 if (words.length <= 1)
                     response = new StringBuilder("Укажите, в каком розыгрыше вы хотите принять участие");
                 else {
                     words[1] = words[1].trim();
-                    if (words[1].matches("\\d*")) {
-                        int id = Integer.parseInt(words[1]);
-
-                        if (lotteryIDS.contains(id)) {
-                            Lottery toOperate = Lottery.getById(lotteryList, id);
-                            if (toOperate == null)
-                                response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                            else {
-                                if (toOperate.addUser(message.getFrom()))
-                                    response = new StringBuilder("Теперь пользователь " + userName + " принимает участие в розыгрыше предмета: " + toOperate.getLotteryPrize() + "\nЖелаем удачи)");
-                                else
-                                    response = new StringBuilder("Вы уже участвуете в розыгрыше предмета: " + toOperate.getLotteryPrize());
-                            }
-                        } else
-                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                    } else {
-                        Lottery toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
-                        if (toOperate == null)
-                            response = new StringBuilder("Розыгрыша предмета: " + words[1] + " не существует");
-                        else {
-                            if (toOperate.addUser(message.getFrom()))
-                                response = new StringBuilder("Теперь пользователь " + userName + " принимает участие в розыгрыше предмета: " + toOperate.getLotteryPrize() + "\nЖелаем удачи)");
-                            else
-                                response = new StringBuilder("Вы уже участвуете в розыгрыше предмета: " + toOperate.getLotteryPrize());
-                        }
+                    int id = -1;
+                    boolean exit = false;
+                    Lottery toOperate = null;
+                    if (words[1].matches("\\d*"))
+                        id = Integer.parseInt(words[1]);
+                    if (lotteryIDS.contains(id))
+                        toOperate = Lottery.getById(lotteryList, id);
+                    else if (!words[1].matches("\\d*"))
+                        toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
+                    else {
+                        response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
+                        exit = true;
                     }
+                    if (!exit)
+                        if (toOperate == null)
+                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
+                        else if (toOperate.addUser(message.getFrom()))
+                            response = new StringBuilder("Теперь пользователь " + userName + " принимает участие в розыгрыше предмета: " + toOperate.getLotteryPrize() + "\nЖелаем удачи)");
+                        else
+                            response = new StringBuilder("Вы уже участвуете в розыгрыше предмета: " + toOperate.getLotteryPrize());
                 }
             } else if (messageText.toLowerCase(Locale.ROOT).startsWith("/winner")) {
                 String[] words = messageText.split("/winner");
@@ -179,38 +169,29 @@ public class Bot extends TelegramLongPollingBot {
                     response = new StringBuilder("Укажите id или название разыгрываемого предмета, чтобы опредилить победителя");
                 else {
                     words[1] = words[1].trim();
+                    int id = -1;
+                    boolean exit = false;
+                    Lottery toOperate = null;
 
-                    if (words[1].matches("\\d*")) {
-                        int id = Integer.parseInt(words[1]);
-
-                        if (lotteryIDS.contains(id)) {
-                            Lottery toOperate = Lottery.getById(lotteryList, id);
-                            if (toOperate == null)
-                                response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                            else if (toOperate.isFinished())
-                                response = new StringBuilder("Этот розыгрыш уже завершён!\nПобедителем был " + userName);
-                            else if (toOperate.getWinChance() == 0) {
-                                response = new StringBuilder("В этом розыгрыше пока не принимает участие ни один пользователь!\nСтаньте первым! (пропишите /participate " + toOperate.getID() + ")");
-                            } else {
-                                response = new StringBuilder("Пользователь " + userName +
-                                        " становится победителем розыгрыша предмета: " + toOperate.getLotteryPrize() +
-                                        "\nШанс выиграть предмет: " + toOperate.getLotteryPrize() +
-                                        " был " + toOperate.getWinChance() + "%\n" +
-                                        "Остальные — не расстраивайтесь, мы надеемся, что в следующий раз повезёт именно вам!");
-                            }
-                        } else
-                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                    } else {
-                        Lottery toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
+                    if (words[1].matches("\\d*"))
+                        id = Integer.parseInt(words[1]);
+                    if (lotteryIDS.contains(id))
+                        toOperate = Lottery.getById(lotteryList, id);
+                    else if (!words[1].matches("\\d*"))
+                        toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
+                    else {
+                        response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
+                        exit = true;
+                    }
+                    if (!exit) {
                         if (toOperate == null)
-                            response = new StringBuilder("Розыгрыша предмета: " + words[1] + " не существует");
+                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
                         else if (toOperate.isFinished())
                             response = new StringBuilder("Этот розыгрыш уже завершён!\nПобедителем был " + userName);
                         else if (toOperate.getWinChance() == 0) {
                             response = new StringBuilder("В этом розыгрыше пока не принимает участие ни один пользователь!\nСтаньте первым! (пропишите /participate " + toOperate.getID() + ")");
                         } else {
-                            userName = toOperate.getWinner().getUserName() == null ? toOperate.getWinner().getFirstName() + " " + toOperate.getWinner().getLastName() : "@" + toOperate.getWinner().getUserName();
-                            response = new StringBuilder("Пользователь @" + userName +
+                            response = new StringBuilder("Пользователь " + userName +
                                     " становится победителем розыгрыша предмета: " + toOperate.getLotteryPrize() +
                                     "\nШанс выиграть предмет: " + toOperate.getLotteryPrize() +
                                     " был " + toOperate.getWinChance() + "%\n" +
@@ -219,10 +200,12 @@ public class Bot extends TelegramLongPollingBot {
                     }
                 }
             } else if (messageText.toLowerCase(Locale.ROOT).startsWith("/lotteries")) {
-                response = new StringBuilder("Сейчас проводится " + lotteryList.size() + " розыгрышей: \n");
-                for (int i = 0; i < lotteryList.size(); i++) {
-                    response.append(i + 1).append(")").append(lotteryList.get(i).getLotteryPrize()).append("(id = ").append(lotteryList.get(i).getID()).append(")").append("          ").append(lotteryList.get(i).getParticipantCount()).append(" человек уже участвуют!").append("\n");
-                }
+                if (lotteryList.size() > 0) {
+                    response = new StringBuilder("Сейчас проводится " + lotteryList.size() + " розыгрышей: \n");
+                    for (int i = 0; i < lotteryList.size(); i++)
+                        response.append(i + 1).append(")").append(lotteryList.get(i).getLotteryPrize()).append("(id = ").append(lotteryList.get(i).getID()).append(")").append("          ").append(lotteryList.get(i).getParticipantCount()).append(" человек уже участвуют!").append("\n");
+                } else
+                    response = new StringBuilder("Розыгрышей пока нет");
             } else if (messageText.toLowerCase(Locale.ROOT).startsWith("/dellottery")) {
                 String[] words = messageText.split("/dellottery");
                 if (!lotteryCreators.contains(message.getFrom().getId())) {
@@ -232,38 +215,24 @@ public class Bot extends TelegramLongPollingBot {
                     response = new StringBuilder("Укажите id или название предмета, чтобы удалить розыгрыш");
                 else {
                     words[1] = words[1].trim();
+                    words[1] = words[1].trim();
+                    int id = -1;
+                    boolean exit = false;
+                    Lottery toOperate = null;
 
-                    if (words[1].matches("\\d*")) {
-                        int id = Integer.parseInt(words[1]);
-
-                        if (lotteryIDS.contains(id)) {
-                            Lottery toOperate = Lottery.getById(lotteryList, id);
-                            if (toOperate == null)
-                                response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                            else {
-                                if (!toOperate.delete())
-                                    if (toOperate.isFinished())
-                                        response = new StringBuilder("Не удалось удалить розыгрыш предмета " + toOperate.getLotteryPrize() + ": файла не существует");
-                                    else
-                                        response = new StringBuilder("Не удалось удалить розыгрыш предмета " + toOperate.getLotteryPrize() + ": этот розыгрыш ещё не завершён");
-                                else {
-                                    lotteryList.remove(toOperate);
-                                    lotteryIDS.remove(toOperate.getIntegerId());
-                                    response = new StringBuilder("Розыгрыш предмета: " + toOperate.getLotteryPrize() + " был удалён\n");
-
-                                    response.append("Сейчас проводится ").append(lotteryList.size()).append(" розыгрышей: \n");
-
-                                    for (int i = 0; i < lotteryList.size(); i++) {
-                                        response.append(i + 1).append(")").append(lotteryList.get(i).getLotteryPrize()).append("(id = ").append(lotteryList.get(i).getID()).append(")").append("          ").append(lotteryList.get(i).getParticipantCount()).append(" человек уже участвуют!").append("\n");
-                                    }
-                                }
-                            }
-                        } else
-                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                    } else {
-                        Lottery toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
+                    if (words[1].matches("\\d*"))
+                        id = Integer.parseInt(words[1]);
+                    if (lotteryIDS.contains(id))
+                        toOperate = Lottery.getById(lotteryList, id);
+                    else if (!words[1].matches("\\d*"))
+                        toOperate = Lottery.getByLotteryPrize(lotteryList, words[1]);
+                    else {
+                        response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
+                        exit = true;
+                    }
+                    if (!exit) {
                         if (toOperate == null)
-                            response = new StringBuilder("Розыгрыша предмета: " + words[1] + " не существует");
+                            response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
                         else {
                             if (!toOperate.delete())
                                 if (toOperate.isFinished())
@@ -274,10 +243,12 @@ public class Bot extends TelegramLongPollingBot {
                                 lotteryList.remove(toOperate);
                                 lotteryIDS.remove(toOperate.getIntegerId());
                                 response = new StringBuilder("Розыгрыш предмета: " + toOperate.getLotteryPrize() + " был удалён\n");
-                                response.append("Сейчас проводится ").append(lotteryList.size()).append(" розыгрышей: \n");
-                                for (int i = 0; i < lotteryList.size(); i++) {
-                                    response.append(i + 1).append(")").append(lotteryList.get(i).getLotteryPrize()).append("(id = ").append(lotteryList.get(i).getID()).append(")").append("          ").append(lotteryList.get(i).getParticipantCount()).append(" человек уже участвуют!").append("\n");
-                                }
+                                if (lotteryList.size() > 0) {
+                                    response = new StringBuilder("Сейчас проводится " + lotteryList.size() + " розыгрышей: \n");
+                                    for (int i = 0; i < lotteryList.size(); i++)
+                                        response.append(i + 1).append(")").append(lotteryList.get(i).getLotteryPrize()).append("(id = ").append(lotteryList.get(i).getID()).append(")").append("          ").append(lotteryList.get(i).getParticipantCount()).append(" человек уже участвуют!").append("\n");
+                                } else
+                                    response.append("Розыгрышей пока нет");
                             }
                         }
                     }
