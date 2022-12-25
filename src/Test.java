@@ -1,13 +1,15 @@
 import org.telegram.telegrambots.meta.api.objects.User;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class Test {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        List<Lottery> list1 = new ArrayList<>();
-        List<Lottery> list2 = new ArrayList<>();
-        List<Lottery> list3 = new ArrayList<>();
+        List<Lottery> list1;
+        List<Lottery> list2;
+        List<Lottery> list3;
 
         ObjectInputStream ois1 = new ObjectInputStream(new FileInputStream("I:\\LotteryBot\\Lotteries\\lotteryList.dat"));
         list1 = (List<Lottery>) ois1.readObject();

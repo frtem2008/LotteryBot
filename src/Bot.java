@@ -53,12 +53,14 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "LiveLotteryBot";
+        return "HornyLivingBot";
+        //return "LiveLotteryBot";
     }
 
     @Override
     public String getBotToken() {
-        return "5941794780:AAF31j0STWEuFmFlUr4dn9pVRXM8iuHnddk";
+        return "5412443362:AAFNztR2X00WOf_rvSEc6q4xbX7qx5p4PYA";
+//      return "5941794780:AAF31j0STWEuFmFlUr4dn9pVRXM8iuHnddk";
     }
 
     @Override
@@ -186,11 +188,13 @@ public class Bot extends TelegramLongPollingBot {
                     if (!exit) {
                         if (toOperate == null)
                             response = new StringBuilder("Розыгрыша с итендификатором " + id + " не существует");
-                        else if (toOperate.isFinished())
+                        else if (toOperate.isFinished()) {
+                            userName = toOperate.getWinner().getUserName() == null ? toOperate.getWinner().getFirstName() + " " + toOperate.getWinner().getLastName() : "@" + toOperate.getWinner().getUserName();
                             response = new StringBuilder("Этот розыгрыш уже завершён!\nПобедителем был " + userName);
-                        else if (toOperate.getWinChance() == 0) {
+                        } else if (toOperate.getWinChance() == 0) {
                             response = new StringBuilder("В этом розыгрыше пока не принимает участие ни один пользователь!\nСтаньте первым! (пропишите /participate " + toOperate.getID() + ")");
                         } else {
+                            userName = toOperate.getWinner().getUserName() == null ? toOperate.getWinner().getFirstName() + " " + toOperate.getWinner().getLastName() : "@" + toOperate.getWinner().getUserName();
                             response = new StringBuilder("Пользователь " + userName +
                                     " становится победителем розыгрыша предмета: " + toOperate.getLotteryPrize() +
                                     "\nШанс выиграть предмет: " + toOperate.getLotteryPrize() +
